@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       https://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/rabbit
+       http://www.springframework.org/schema/rabbit/spring-rabbit.xsd">
+
+    <!--    引入外部属性文件-->
+    <context:property-placeholder location="rabbitmq.properties"/>
+
+    <!--    配置connecttionFactory-->
+    <rabbit:connection-factory host="${rabbitmq.host}"
+                               port="${rabbitmq.port}"
+                               username="${rabbitmq.username}"
+                               password="${rabbitmq.password}"
+                               virtual-host="${rabbitmq.virtual-host}" id="connectionFactory"/>
+
+<!--    配置简监听简单模式队列的监听器-->
+    <bean class="org.example.listener.SimpleListener" id="simpleListener"/>
+    <bean class="org.example.listener.FanoutListn" id="fanoutListn"/>
+
+<!--    配置监听定向模式的监听器，用来测试消息的手动确认-->
+    <bean class="org.example.listener.AckListen" id="ackListen"/>
+
+<!--    配置监听器容器:监听队列，当队列有消息的时候就开始 消费
+        queue-names:指定消费者消费的队列的名字
+        acknowledge:设置消费端的确认模式，有手动确认和自动确认两种，默认为自动确认
+        prefetch：消费限流，设置每次取出多少条数据
+
+ -->
+    <rabbit:listener-container connection-factory="connectionFactory" acknowledge="manual" prefetch="2">
+        <rabbit:listener ref="simpleListener" queue-names="spring_simple_queue"/>
+        <rabbit:listener ref="fanoutListn" queue-names="spring_fanout_queue1"/>
+        <rabbit:listener ref="fanoutListn" queue-names="spring_fanout_queue2"/>
+        <rabbit:listener ref="ackListen" queue-names="spring_direct_queue1"/>
+    </rabbit:listener-container>
+
+</beans>
